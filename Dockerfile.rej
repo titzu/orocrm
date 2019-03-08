@@ -1,0 +1,10 @@
+diff a/Dockerfile b/Dockerfile	(rejected hunks)
+@@ -8,7 +8,7 @@
+ # branch name or tag 
+ # master - for master branch
+ # tags/1.9.1 - for 1.9.1 tag 
+-ARG GIT_REF="tags/2.0.26"
++ARG GIT_REF="tags/3.1"
+ 
+ RUN install-application.sh
+ 
