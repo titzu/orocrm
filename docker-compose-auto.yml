@@ -1,55 +1,79 @@
-data:
-  image: djocker/orodata
-source_code:
-  image: djocker/orocrm
-db:
-  image: mysql:5.5
-  expose:
-    - "3306"
-  environment:
-    - MYSQL_ROOT_PASSWORD=root
-    - MYSQL_DATABASE=orocrm
-    - MYSQL_USER=orocrm
-    - MYSQL_PASSWORD=orocrm
-  volumes_from:
-    - data
-mail:
-  image: catatnight/postfix
-  expose:
-    - "25"
-  environment:
-    - maildomain=localhost
-    - smtp_user=user@localhost:password
-minion:
-  image: djocker/oromono
-  links:
-    - "db"
-    - "mail"
-  ports:
-    - "3080:80"
-    - "3088:8080"
-  volumes_from:
-    - data
-    - source_code
-  environment:
-    - CMD_INIT_BEFORE=
-    - CMD_INIT_CLEAN=runuser -s /bin/sh -c '/usr/bin/php /var/www/app/console oro:install --timeout 3600 --force --drop-database --env=prod --user-name=admin --user-firstname=John --user-lastname=Doe --user-password="admin1111" --user-email="johndoe@example.com" --organization-name="Acme" --application-url="http://oro.loc/"' www-data
-    - CMD_INIT_INSTALLED=
-    - CMD_INIT_AFTER=
-    - APP_DB_DRIVER=pdo_mysql
-    - APP_DB_HOST=db
-    - APP_DB_PORT=3306
-    - APP_DB_USER=orocrm
-    - APP_DB_PASSWORD=orocrm
-    - APP_DB_NAME=orocrm
-    - APP_HOSTNAME=localhost
-    - APP_MAILER_TRANSPORT=smtp
-    - APP_MAILER_HOST=mail
-    - APP_MAILER_PORT=25
-    - APP_MAILER_ENCRYPTION=
-    - APP_MAILER_USER=user
-    - APP_MAILER_PASSWORD=password
-    - APP_WEBSOCKET_BACKEND_PORT=8080  
-    - APP_WEBSOCKET_FRONTEND_PORT=3088  
-    - APP_SECRET=123456789  
-    - APP_IS_INSTALLED=
+version: '2'
+
+services:
+  data:
+    image: djocker/orodata
+    restart: always
+    volumes:
+      - ./data:/var/www
+  source_code:
+    image: djocker/orocrm
+    restart: always
+  db:
+    image: mysql:5.5
+    restart: always
+    expose:
+      - "3306"
+    environment:
+      - MYSQL_ROOT_PASSWORD=root
+      - MYSQL_DATABASE=orocrm
+      - MYSQL_USER=orocrm
+      - MYSQL_PASSWORD=orocrm
+    volumes_from:
+      - data
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin
+    restart: always
+    links:
+      - "db"
+    environment:
+      PMA_HOST: db
+      PMA_PORT: 3306
+      PMA_USER: orocrm
+      PMA_PASSWORD: orocrm
+    ports:
+      - '7777:80'
+    volumes: 
+      - sessions    
+  mail:
+    image: catatnight/postfix
+    restart: always
+    expose:
+      - "25"
+    environment:
+      - maildomain=localhost
+      - smtp_user=user@localhost:password
+  minion:
+    image: djocker/oromono
+    restart: always
+    links:
+      - "db"
+      - "mail"
+    ports:
+      - "3080:80"
+      - "3088:8080"
+    volumes_from:
+      - data
+      - source_code  
+    environment:
+      - CMD_INIT_BEFORE=
+      - CMD_INIT_CLEAN=runuser -s /bin/sh -c '/usr/bin/php /var/www/app/console oro:install --timeout 3600 --force --drop-database --env=prod --user-name=admin --user-firstname=John --user-lastname=Doe --user-password="admin1111" --user-email="johndoe@example.com" --organization-name="Acme" --application-url="http://oro.loc/"' www-data
+      - CMD_INIT_INSTALLED=
+      - CMD_INIT_AFTER=
+      - APP_DB_DRIVER=pdo_mysql
+      - APP_DB_HOST=db
+      - APP_DB_PORT=3306
+      - APP_DB_USER=orocrm
+      - APP_DB_PASSWORD=orocrm
+      - APP_DB_NAME=orocrm
+      - APP_HOSTNAME=localhost
+      - APP_MAILER_TRANSPORT=smtp
+      - APP_MAILER_HOST=mail
+      - APP_MAILER_PORT=25
+      - APP_MAILER_ENCRYPTION=
+      - APP_MAILER_USER=user
+      - APP_MAILER_PASSWORD=password
+      - APP_WEBSOCKET_BACKEND_PORT=8080  
+      - APP_WEBSOCKET_FRONTEND_PORT=3088  
+      - APP_SECRET=123456789  
+      - APP_IS_INSTALLED=
